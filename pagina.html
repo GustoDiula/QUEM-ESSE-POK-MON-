@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quem é Esse Pokémon? — O Jogo de Adivinhação</title>
+<meta name="description" content="Teste seus conhecimentos sobre Pokémons! 6 tentativas, mais de 1000 Pokémons. Jogue grátis no navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --red: #cc0000;
+    --red-dark: #8b0000;
+    --red-light: #ff3d3d;
+    --blue: #3b4cca;
+    --blue-dark: #1a237e;
+    --blue-light: #5c6bc0;
+    --yellow: #ffd54f;
+    --cream: #f8f9ff;
+    --ink: #12163a;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* ============================================================
+     NAVEGAÇÃO
+     ============================================================ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 14px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(26, 35, 126, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 3px solid var(--red);
+    transition: padding .3s;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: .5px;
+  }
+
+  .logo-ball {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(to bottom, var(--red) 50%, #fff 50%);
+    border: 3px solid #12163a;
+    position: relative;
+    box-shadow: 0 0 12px rgba(255,213,79,.5);
+  }
+
+  .logo-ball::after {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    background: #fff;
+    border: 3px solid #12163a;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 26px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: #cfd4ff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .9rem;
+    transition: color .2s;
+  }
+
+  .nav-links a:hover { color: var(--yellow); }
+
+  .btn-nav {
+    background: linear-gradient(135deg, var(--red-light), var(--red-dark));
+    color: #fff;
+    padding: 9px 20px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: .85rem;
+    box-shadow: 0 4px 0 #5a0000;
+    transition: transform .15s, filter .2s;
+  }
+
+  .btn-nav:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+  /* ============================================================
+     HERO
+     ============================================================ */
+  .hero {
+    min-height: 100vh;
+    padding: 130px 5% 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(204,0,0,.35) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(59,76,202,.5) 0%, transparent 45%),
+      linear-gradient(135deg, #12163a 0%, #1a237e 45%, #8b0000 100%);
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 820px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,213,79,.15);
+    border: 2px solid var(--yellow);
+    color: var(--yellow);
+    padding: 7px 16px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+
+  .badge .dot {
+    width: 8px; height: 8px;
+    background: #4caf50;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4caf50;
+    animation: pulse 1.6s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+  }
+
+  .hero h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(1.6rem, 4.2vw, 3rem);
+    line-height: 1.3;
+    margin-bottom: 22px;
+    text-shadow: 4px 4px 0 rgba(0,0,0,.35);
+  }
+
+  .hero h1 .accent-red   { color: var(--red-light); }
+  .hero h1 .accent-blue  { color: #7c8aff; }
+
+  .hero p.lead {
+    font-size: 1.1rem;
+    color: #cfd4ff;
+    max-width: 620px;
+    margin: 0 auto 34px;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--red-light), var(--red-dark));
+    color: #fff;
+    padding: 17px 34px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-weight: 900;
+    font-size: 1.05rem;
+    letter-spacing: .5px;
+    box-shadow: 0 6px 0 #5a0000, 0 14px 30px rgba(204,0,0,.4);
+    transition: transform .15s, box-shadow .15s;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 9px 0 #5a0000, 0 18px 40px rgba(204,0,0,.5);
+  }
+
+  .btn-primary:active { transform: translateY(2px); box-shadow: 0 3px 0 #5a0000; }
+
+  .btn-secondary-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    color: #fff;
+    padding: 16px 28px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: .95rem;
+    border: 2px solid rgba(255,255,255,.35);
+    transition: all .2s;
+  }
+
+  .btn-secondary-hero:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    background: rgba(255,213,79,.08);
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 2px solid rgba(255,255,255,.12);
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .stat-item strong {
+    font-family: 'Press Start 2P', monospace;
+    display: block;
+    font-size: 1.35rem;
+    color: var(--yellow);
+    margin-bottom: 6px;
+  }
+
+  .stat-item span {
+    font-size: .78rem;
+    color: #a9b1e8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
+  /* ============================================================
+     FAIXA MARQUEE
+     ============================================================ */
+  .marquee {
+    background: var(--red);
+    color: #fff;
+    padding: 16px 0;
+    overflow: hidden;
+    border-top: 4px solid var(--yellow);
+    border-bottom: 4px solid var(--blue);
+    white-space: nowrap;
+    position: relative;
+  }
+
+  .marquee-track {
+    display: inline-block;
+    animation: scroll 30s linear infinite;
+    font-family: 'Press Start 2P', monospace;
+    font-size: .85rem;
+    letter-spacing: 2px;
+  }
+
+  .marquee-track span { margin: 0 28px; }
+
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ============================================================
+     SEÇÃO GENÉRICA
+     ============================================================ */
+  section { padding: 90px 5%; }
+
+  .section-header {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto 60px;
+  }
+
+  .section-tag {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--red);
+    background: rgba(204,0,0,.08);
+    padding: 7px 18px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+    border: 2px solid rgba(204,0,0,.18);
+  }
+
+  h2.section-title {
+    font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    letter-spacing: -.5px;
+  }
+
+  h2.section-title .accent-red  { color: var(--red); }
+  h2.section-title .accent-blue { color: var(--blue); }
+
+  .section-desc {
+    font-size: 1.05rem;
+    color: #555;
+    font-weight: 500;
+  }
+
+  /* ============================================================
+     RECURSOS
+     ============================================================ */
+  .features {
+    background:
+      radial-gradient(circle at 90% 10%, rgba(59,76,202,.06) 0%, transparent 40%),
+      radial-gradient(circle at 5% 90%, rgba(204,0,0,.06) 0%, transparent 40%),
+      #f8f9ff;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 26px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .feature-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 34px 28px;
+    border: 3px solid #e8eaf6;
+    position: relative;
+    transition: transform .3s, box-shadow .3s, border-color .3s;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, var(--red), var(--blue));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .35s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--blue);
+    box-shadow: 0 24px 48px rgba(26,35,126,.15);
+  }
+
+  .feature-card:hover::before { transform: scaleX(1); }
+
+  .feature-icon {
+    width: 58px; height: 58px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.7rem;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #ffebee, #e8eaf6);
+    border: 3px solid var(--blue);
+  }
+
+  .feature-icon.red { background: linear-gradient(135deg, #ffebee, #ffcdd2); border-color: var(--red); }
+
+  .feature-card h3 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: var(--ink);
+  }
+
+  .feature-card p {
+    font-size: .95rem;
+    color: #666;
+    line-height: 1.65;
+  }
+
+  /* ============================================================
+     COMO JOGAR
+     ============================================================ */
+  .how {
+    background: linear-gradient(135deg, #12163a 0%, #1a237e 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .how::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(204,0,0,.3) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(92,107,192,.3) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  .how .section-header { position: relative; z-index: 2; }
+  .how .section-title { color: #fff; }
+  .how .section-desc  { color: #a9b1e8; }
+  .how .section-tag {
+    color: var(--yellow);
+    background: rgba(255,213,79,.1);
+    border-color: rgba(255,213,79,.25);
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 24px;
+    max-width: 1120px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  .step {
+    background: rgba(255,255,255,.05);
+    border: 2px solid rgba(255,255,255,.1);
+    border-radius: 18px;
+    padding: 30px 24px;
+    backdrop-filter: blur(6px);
+    transition: all .3s;
+    position: relative;
+  }
+
+  .step:hover {
+    background: rgba(255,255,255,.1);
+    border-color: var(--yellow);
+    transform: translateY(-6px);
+  }
+
+  .step-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.8rem;
+    color: var(--red-light);
+    margin-bottom: 14px;
+    display: block;
+    text-shadow: 3px 3px 0 rgba(0,0,0,.4);
+  }
+
+  .step h3 {
+    font-size: 1.08rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .step p {
+    font-size: .92rem;
+    color: #b8bfe8;
+    line-height: 1.6;
+  }
+
+  /* ============================================================
+     CTA FINAL
+     ============================================================ */
+  .final-cta {
+    padding: 100px 5%;
+    text-align: center;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(204,0,0,.15) 0%, transparent 55%),
+      linear-gradient(180deg, #f8f9ff 0%, #e8eaf6 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-cta-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    background: #fff;
+    border: 4px solid var(--blue);
+    border-radius: 28px;
+    padding: 60px 40px;
+    box-shadow:
+      0 0 0 6px var(--red),
+      0 30px 60px rgba(26,35,126,.25);
+    position: relative;
+  }
+
+  .final-cta-inner::before {
+    content: '?';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 60px;
+    background: linear-gradient(135deg, var(--red), var(--blue));
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,.3);
+  }
+
+  .final-cta h2 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(1.2rem, 2.7vw, 1.9rem);
+    color: var(--red);
+    line-height: 1.4;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 0 #e8eaf6;
+  }
+
+  .final-cta p {
+    font-size: 1.05rem;
+    color: #555;
+    margin-bottom: 34px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .final-cta .btn-primary {
+    padding: 20px 44px;
+    font-size: 1.15rem;
+  }
+
+  .sub-cta {
+    margin-top: 18px;
+    font-size: .82rem;
+    color: #888;
+    font-weight: 600;
+  }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  footer {
+    background: #12163a;
+    color: #8a92c8;
+    padding: 50px 5% 30px;
+    border-top: 5px solid var(--red);
+  }
+
+  .footer-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 34px;
+  }
+
+  .footer-brand .logo { margin-bottom: 14px; }
+
+  .footer-brand p {
+    font-size: .88rem;
+    line-height: 1.7;
+    max-width: 320px;
+  }
+
+  .footer-col h4 {
+    color: #fff;
+    font-size: .82rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 10px; }
+  .footer-col a {
+    color: #8a92c8;
+    text-decoration: none;
+    font-size: .88rem;
+    transition: color .2s;
+  }
+  .footer-col a:hover { color: var(--yellow); }
+
+  .footer-bottom {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-top: 26px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: .78rem;
+  }
+
+  .footer-bottom .disclaimer {
+    color: #5f6799;
+    font-size: .74rem;
+    max-width: 560px;
+  }
+
+  /* ============================================================
+     RESPONSIVO
+     ============================================================ */
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+
+    .hero {
+      padding-top: 110px;
+    }
+
+    .hero-stats {
+      gap: 28px;
+    }
+
+    .footer-inner {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    section { padding: 60px 5%; }
+
+    .hero-cta { flex-direction: column; width: 100%; }
+    .btn-primary, .btn-secondary-hero { width: 100%; justify-content: center; }
+
+    .final-cta-inner { padding: 50px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<nav>
+  <div class="logo">
+    <div class="logo-ball"></div>
+    QUEM É ESSE POKÉMON?
+  </div>
+  <ul class="nav-links">
+    <li><a href="#recursos">Recursos</a></li>
+    <li><a href="#como-jogar">Como Jogar</a></li>
+    <li><a href="#jogar">Jogar</a></li>
+  </ul>
+  <a href="#jogar" class="btn-nav">▶ Jogar Grátis</a>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero">
+  <div class="hero-content">
+    <div class="badge"><span class="dot"></span> Mais de 1.025 Pokémons disponíveis</div>
+
+    <h1>
+      Adivinhe o <span class="accent-red">Pokémon</span><br>
+      antes que a <span class="accent-blue">imagem fique nítida</span>!
+    </h1>
+
+    <p class="lead">
+      Cada rodada sorteia um Pokémon aleatório e o exibe embaralhado.
+      A cada erro a imagem vai se revelando — mas cuidado, você só tem
+      <strong>6 tentativas</strong>. Será que você conhece todos?
+    </p>
+
+    <div class="hero-cta">
+      <a href="#jogar" class="btn-primary">
+        🎮 Começar a Jogar Agora
+      </a>
+      <a href="#como-jogar" class="btn-secondary-hero">
+        Como funciona →
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <strong>1025+</strong>
+        <span>Pokémons</span>
+      </div>
+      <div class="stat-item">
+        <strong>6</strong>
+        <span>Tentativas</span>
+      </div>
+      <div class="stat-item">
+        <strong>100%</strong>
+        <span>Grátis</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== MARQUEE ===================== -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span>★ +1.025 POKÉMONS</span>
+    <span>★ 6 TENTATIVAS</span>
+    <span>★ AUTOCOMPLETE INTELIGENTE</span>
+    <span>★ 100% GRÁTIS</span>
+    <span>★ +1.025 POKÉMONS</span>
+    <span>★ 6 TENTATIVAS</span>
+    <span>★ AUTOCOMPLETE INTELIGENTE</span>
+    <span>★ 100% GRÁTIS</span>
+  </div>
+</div>
+
+<!-- ===================== RECURSOS ===================== -->
+<section class="features" id="recursos">
+  <div class="section-header">
+    <span class="section-tag">Por que jogar?</span>
+    <h2 class="section-title">
+      Um desafio para <span class="accent-red">verdadeiros</span> <span class="accent-blue">treinadores</span>
+    </h2>
+    <p class="section-desc">
+      Simples de jogar, difícil de dominar. Cada partida é uma nova surpresa.
+    </p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon red">🎲</div>
+      <h3>Sorteio Totalmente Aleatório</h3>
+      <p>Entre os mais de 1.025 Pokémons da Pokédex nacional, qualquer um pode aparecer. Sempre uma surpresa nova.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🖼️</div>
+      <h3>Revelação Progressiva</h3>
+      <p>A imagem começa embaralhada e vai ficando nítida conforme você erra. É o clássico "quem é esse Pokémon?" com um toque moderno.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon red">⚡</div>
+      <h3>Autocomplete Inteligente</h3>
+      <p>Digite as primeiras letras e escolha na lista. Nada de gastar tentativa com erro de digitação — o jogo valida se o nome existe antes de contar.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Sistema de 6 Tentativas</h3>
+      <p>Indicadores visuais mostram quantas chances ainda restam. Errou todas? O jogo revela a resposta e você parte para o próximo.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon red">💡</div>
+      <h3>Dica Automática</h3>
+      <p>Depois de 3 erros, a primeira letra do nome aparece como dica. Ajuda sem entregar de bandeja.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Placar e Sequência</h3>
+      <p>Acompanhe seus acertos, a sequência atual (streak) e o total de rodadas jogadas. Desafie seus amigos a bater seu recorde.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== COMO JOGAR ===================== -->
+<section class="how" id="como-jogar">
+  <div class="section-header">
+    <span class="section-tag">Passo a passo</span>
+    <h2 class="section-title">Como jogar em 4 passos</h2>
+    <p class="section-desc">
+      Leva menos de 30 segundos para entender — e horas para dominar.
+    </p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">01</span>
+      <h3>Olhe a imagem</h3>
+      <p>Um Pokémon aleatório aparece na tela, mas ainda embaralhado. Analise as cores, o formato e as silhuetas.</p>
+    </div>
+
+    <div class="step">
+      <span class="step-num">02</span>
+      <h3>Chute um nome</h3>
+      <p>Digite na caixa de texto. O autocomplete mostra sugestões conforme você escreve — use as setas e o Enter.</p>
+    </div>
+
+    <div class="step">
+      <span class="step-num">03</span>
+      <h3>Errou? A imagem revela</h3>
+      <p>Cada erro deixa a imagem mais nítida. Depois de 3 erros, a primeira letra aparece como dica extra.</p>
+    </div>
+
+    <div class="step">
+      <span class="step-num">04</span>
+      <h3>Acertou? Próximo!</h3>
+      <p>A imagem fica totalmente nítida e você avança para o próximo Pokémon. A sequência de acertos aumenta seu placar.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CTA FINAL ===================== -->
+<section class="final-cta" id="jogar">
+  <div class="final-cta-inner">
+    <h2>Pronto para o desafio?</h2>
+    <p>
+      Sem downloads, sem cadastro, sem enrolação. Clique abaixo e descubra
+      quantos Pokémons você realmente conhece.
+    </p>
+
+    <!-- =========================================================
+         TROQUE O href ABAIXO PELO CAMINHO DO SEU ARQUIVO DO JOGO.
+         ========================================================= -->
+    <a href="jogo.html" class="btn-primary">
+      🎮 Jogar Quem é Esse Pokémon?
+    </a>
+
+    <p class="sub-cta">✔ Grátis • ✔ Sem instalação • ✔ Funciona no celular</p>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo">
+        <div class="logo-ball"></div>
+        QUEM É ESSE POKÉMON?
+      </div>
+      <p>
+        Um jogo de adivinhação feito para fãs de Pokémon.
+        Teste sua memória, descubra novas espécies e desafie seus amigos.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Navegação</h4>
+      <ul>
+        <li><a href="#recursos">Recursos</a></li>
+        <li><a href="#como-jogar">Como Jogar</a></li>
+        <li><a href="#jogar">Jogar Agora</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Sobre</h4>
+      <ul>
+        <li><a href="#">Contato</a></li>
+        <li><a href="#">Sugestões</a></li>
+        <li><a href="#">Reportar Bug</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2025 Quem é Esse Pokémon? — Projeto de fã.</div>
+    <div class="disclaimer">
+      Pokémon e todos os nomes relacionados são marcas registradas da Nintendo,
+      Game Freak e The Pokémon Company. Este é um projeto de fã, sem fins comerciais,
+      e não possui vínculo oficial com as detentoras dos direitos.
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Efeito suave no nav ao rolar
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('nav');
+    if (window.scrollY > 40) {
+      nav.style.padding = '10px 5%';
+      nav.style.background = 'rgba(26, 35, 126, 0.96)';
+    } else {
+      nav.style.padding = '14px 5%';
+      nav.style.background = 'rgba(26, 35, 126, 0.85)';
+    }
+  });
+
+  // Animação de entrada para os cards
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.feature-card, .step').forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = `opacity .6s ease ${i * 0.06}s, transform .6s ease ${i * 0.06}s, box-shadow .3s, border-color .3s, background .3s`;
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>
