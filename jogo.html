@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quem é Esse Pokémon?</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background: linear-gradient(135deg, #b71c1c 0%, #1a237e 100%);
+    padding: 18px;
+    padding-bottom: 60px;
+  }
+
+  .game {
+    background: #f8f9ff;
+    border-radius: 22px;
+    padding: 22px 20px 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 22px 45px rgba(0,0,0,.45);
+    border: 4px solid #3b4cca;
+    position: relative;
+  }
+
+  header { text-align: center; margin-bottom: 14px; }
+
+  h1 {
+    font-size: 1.55rem;
+    color: #cc0000;
+    letter-spacing: .5px;
+    text-shadow: 2px 2px 0 #d7dcff;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: .78rem;
+    color: #3b4cca;
+    font-weight: 700;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .stat {
+    flex: 1;
+    background: linear-gradient(135deg, #3b4cca, #1a237e);
+    color: #fff;
+    border-radius: 10px;
+    padding: 7px 4px;
+    text-align: center;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    font-weight: 700;
+  }
+
+  .stat b {
+    display: block;
+    font-size: 1.15rem;
+    color: #ffd54f;
+    margin-top: 2px;
+  }
+
+  .stage {
+    position: relative;
+    background: linear-gradient(160deg, #e8eaf6, #c5cae9);
+    border: 3px solid #3b4cca;
+    border-radius: 16px;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  #canvas {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 1 / 1;
+    display: block;
+    border-radius: 10px;
+    background: #dfe3f7;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(26,35,126,.55);
+    color: #fff;
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: 1px;
+    border-radius: 14px;
+    backdrop-filter: blur(2px);
+  }
+
+  .overlay.hidden { display: none; }
+
+  .attempts {
+    display: flex;
+    justify-content: center;
+    gap: 7px;
+    margin-bottom: 10px;
+  }
+
+  .pip {
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    border: 2px solid #3b4cca;
+    background: #fff;
+    transition: all .25s;
+  }
+
+  .pip.used { background: #cc0000; border-color: #8b0000; transform: scale(1.05); }
+
+  .hint-name {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #1a237e;
+    min-height: 24px;
+    margin-bottom: 12px;
+    word-break: break-word;
+  }
+
+  .input-wrap { position: relative; margin-bottom: 10px; }
+
+  #guessInput {
+    width: 100%;
+    padding: 13px 15px;
+    border: 3px solid #3b4cca;
+    border-radius: 12px;
+    font-size: 1rem;
+    outline: none;
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+    font-weight: 600;
+    color: #1a237e;
+  }
+
+  #guessInput:focus { border-color: #cc0000; box-shadow: 0 0 0 4px rgba(204,0,0,.12); }
+  #guessInput:disabled { background: #eceff1; color: #90a4ae; }
+
+  .suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: #fff;
+    border: 2px solid #3b4cca;
+    border-radius: 12px;
+    list-style: none;
+    max-height: 190px;
+    overflow-y: auto;
+    z-index: 20;
+    box-shadow: 0 10px 25px rgba(0,0,0,.25);
+    display: none;
+  }
+
+  .suggestions.open { display: block; }
+
+  .suggestions li {
+    padding: 9px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #1a237e;
+    font-size: .92rem;
+    border-bottom: 1px solid #eceff1;
+  }
+
+  .suggestions li:last-child { border-bottom: none; }
+  .suggestions li.active,
+  .suggestions li:hover { background: linear-gradient(90deg, #cc0000, #3b4cca); color: #fff; }
+
+  .btn {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 13px;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+    cursor: pointer;
+    color: #fff;
+    transition: transform .12s, filter .2s;
+    text-transform: uppercase;
+  }
+
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  .btn-primary { background: linear-gradient(135deg, #e53935, #b71c1c); box-shadow: 0 4px 0 #7a0000; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.12); }
+
+  .btn-secondary { background: linear-gradient(135deg, #5c6bc0, #1a237e); box-shadow: 0 4px 0 #0d1450; }
+  .btn-secondary:hover:not(:disabled) { filter: brightness(1.12); }
+
+  .btn-ghost {
+    background: transparent;
+    color: #3b4cca;
+    box-shadow: none;
+    border: 2px dashed #9fa8da;
+    font-size: .8rem;
+    padding: 9px;
+    margin-top: 8px;
+  }
+  .btn-ghost:hover:not(:disabled) { background: #e8eaf6; }
+
+  #feedback {
+    text-align: center;
+    font-weight: 700;
+    font-size: .92rem;
+    min-height: 22px;
+    margin: 8px 0 6px;
+    color: #3b4cca;
+  }
+
+  .wrong-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 4px;
+    min-height: 0;
+  }
+
+  .wrong-list li {
+    background: #ffebee;
+    color: #b71c1c;
+    border: 2px solid #ef9a9a;
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: .78rem;
+    font-weight: 700;
+    text-decoration: line-through;
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 400px) {
+    h1 { font-size: 1.25rem; }
+    #canvas { max-width: 230px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="game">
+  <header>
+    <h1>Quem é Esse Pokémon?</h1>
+    <div class="subtitle">Descubra antes da imagem ficar nítida!</div>
+    <div class="stats">
+      <div class="stat">Acertos<b id="scoreCorrect">0</b></div>
+      <div class="stat">Sequência<b id="scoreStreak">0</b></div>
+      <div class="stat">Rodadas<b id="scoreTotal">0</b></div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <canvas id="canvas"></canvas>
+    <div class="overlay" id="overlay">Carregando…</div>
+  </div>
+
+  <div class="attempts" id="attempts"></div>
+  <div class="hint-name" id="hintName"></div>
+
+  <div class="input-wrap">
+    <input type="text" id="guessInput" placeholder="Digite o nome do Pokémon…" autocomplete="off" spellcheck="false" disabled>
+    <ul class="suggestions" id="suggestions"></ul>
+  </div>
+
+  <button class="btn btn-primary" id="guessBtn" disabled>Adivinhar</button>
+  <button class="btn btn-ghost" id="giveUpBtn" disabled>Desistir e revelar</button>
+  <button class="btn btn-secondary hidden" id="nextBtn" style="margin-top:10px;">Próximo Pokémon ▶</button>
+
+  <div id="feedback"></div>
+  <ul class="wrong-list" id="wrongList"></ul>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO
+   ============================================================ */
+const MAX_ATTEMPTS = 6;
+const CW = 400; // resolução interna do canvas
+const ART_URL    = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+const SPRITE_URL = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+
+/* Tamanho do bloco do mosaico para cada número de erros.
+   Quanto menor, mais nítida a imagem. */
+const BLOCK_SIZES = [36, 24, 16, 10, 6, 3];
+
+/* ============================================================
+   ELEMENTOS
+   ============================================================ */
+const canvas      = document.getElementById('canvas');
+const ctx         = canvas.getContext('2d');
+canvas.width = CW; canvas.height = CW;
+
+const tmpCanvas = document.createElement('canvas');
+const tmpCtx    = tmpCanvas.getContext('2d');
+
+const overlay     = document.getElementById('overlay');
+const attemptsEl  = document.getElementById('attempts');
+const hintNameEl  = document.getElementById('hintName');
+const guessInput  = document.getElementById('guessInput');
+const suggestions = document.getElementById('suggestions');
+const guessBtn    = document.getElementById('guessBtn');
+const giveUpBtn   = document.getElementById('giveUpBtn');
+const nextBtn     = document.getElementById('nextBtn');
+const feedback    = document.getElementById('feedback');
+const wrongList   = document.getElementById('wrongList');
+const scoreCorrectEl = document.getElementById('scoreCorrect');
+const scoreStreakEl  = document.getElementById('scoreStreak');
+const scoreTotalEl   = document.getElementById('scoreTotal');
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+const state = {
+  all: [],          // [{id, name, display, norm}]
+  answer: null,
+  img: null,
+  wrong: [],
+  revealed: false,
+  active: false,
+  score: 0,
+  streak: 0,
+  total: 0,
+  sugIndex: -1,
+  sugItems: []
+};
+
+/* ============================================================
+   UTILITÁRIOS
+   ============================================================ */
+function prettify(name) {
+  return name
+    .split('-')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function normalize(str) {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => resolve(img);
+    img.onerror = () => reject(new Error('img fail: ' + src));
+    img.src = src;
+  });
+}
+
+/* ============================================================
+   CARREGAMENTO INICIAL DA LISTA COMPLETA
+   ============================================================ */
+async function loadPokedex() {
+  try {
+    const res  = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
+    const data = await res.json();
+
+    state.all = data.results.map(p => {
+      const parts = p.url.split('/').filter(Boolean);
+      const id = parseInt(parts[parts.length - 1], 10);
+      return {
+        id,
+        name: p.name,
+        display: prettify(p.name),
+        norm: normalize(p.name)
+      };
+    }).filter(p => !isNaN(p.id));
+
+    console.log(`Pokédex carregada: ${state.all.length} Pokémons`);
+  } catch (e) {
+    console.error('Erro ao carregar a Pokédex:', e);
+    state.all = [];
+  }
+}
+
+/* ============================================================
+   DESENHO PIXELADO NO CANVAS
+   ============================================================ */
+function drawPixelated(blockSize) {
+  if (!state.img) return;
+
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, CW, CW);
+
+  // Sem pixelização -> imagem nítida
+  if (blockSize <= 1) {
+    ctx.drawImage(state.img, 0, 0, CW, CW);
+    return;
+  }
+
+  const small = Math.max(1, Math.round(CW / blockSize));
+
+  // 1) reduz a imagem (com suavização, para preservar as cores médias)
+  tmpCanvas.width  = small;
+  tmpCanvas.height = small;
+  tmpCtx.imageSmoothingEnabled = true;
+  tmpCtx.clearRect(0, 0, small, small);
+  tmpCtx.drawImage(state.img, 0, 0, small, small);
+
+  // 2) amplia de volta sem suavizar -> blocos bem definidos
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmpCanvas, 0, 0, small, small, 0, 0, CW, CW);
+}
+
+/* ============================================================
+   INTERFACE
+   ============================================================ */
+function renderAttempts() {
+  attemptsEl.innerHTML = '';
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'pip' + (i < state.wrong.length ? ' used' : '');
+    attemptsEl.appendChild(pip);
+  }
+}
+
+function renderWrongList() {
+  wrongList.innerHTML = '';
+  state.wrong.forEach(name => {
+    const li = document.createElement('li');
+    li.textContent = name;
+    wrongList.appendChild(li);
+  });
+}
+
+function renderHintName() {
+  if (!state.answer) { hintNameEl.textContent = ''; return; }
+
+  const display = state.answer.display;
+  const chars   = display.split('');
+
+  const mask = chars.map(c => /[a-zA-ZÀ-ÿ0-9]/.test(c) ? '_' : (c === ' ' ? ' ' : ''));
+
+  // A partir de 3 erros, revela a primeira letra como dica
+  if (state.wrong.length >= 3 && !state.revealed) {
+    for (let i = 0; i < chars.length; i++) {
+      if (/[a-zA-ZÀ-ÿ0-9]/.test(chars[i])) { mask[i] = chars[i]; break; }
+    }
+  }
+
+  hintNameEl.textContent = mask.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function setFeedback(msg, color = '#3b4cca') {
+  feedback.textContent = msg;
+  feedback.style.color = color;
+}
+
+function setControlsEnabled(enabled) {
+  guessInput.disabled = !enabled;
+  guessBtn.disabled   = !enabled;
+  giveUpBtn.disabled  = !enabled;
+}
+
+/* ============================================================
+   INÍCIO DE RODADA
+   ============================================================ */
+async function startRound() {
+  state.active   = false;
+  state.revealed = false;
+  state.wrong    = [];
+  state.img      = null;
+  state.answer   = null;
+
+  overlay.classList.remove('hidden');
+  overlay.textContent = 'Carregando…';
+
+  nextBtn.classList.add('hidden');
+  setControlsEnabled(false);
+  setFeedback('');
+  guessInput.value = '';
+  hideSuggestions();
+  renderAttempts();
+  renderWrongList();
+  hintNameEl.textContent = '';
+
+  ctx.clearRect(0, 0, CW, CW);
+
+  if (state.all.length === 0) {
+    overlay.textContent = 'Erro ao carregar Pokédex';
+    setFeedback('Não foi possível carregar a lista de Pokémons. Verifique sua conexão e recarregue.', '#cc0000');
+    return;
+  }
+
+  // Sorteia um Pokémon diferente do anterior
+  let pick;
+  do {
+    pick = state.all[Math.floor(Math.random() * state.all.length)];
+  } while (state.answer && pick.id === state.answer.id && state.all.length > 1);
+
+  state.answer = pick;
+  state.total++;
+  scoreTotalEl.textContent = state.total;
+
+  // Tenta arte oficial, cai para o sprite pixelado se falhar
+  try {
+    state.img = await loadImage(ART_URL(pick.id));
+  } catch {
+    try {
+      state.img = await loadImage(SPRITE_URL(pick.id));
+    } catch {
+      overlay.textContent = 'Falha ao carregar imagem';
+      setFeedback('Erro ao baixar a imagem do Pokémon. Tente novamente.', '#cc0000');
+      return;
+    }
+  }
+
+  overlay.classList.add('hidden');
+
+  drawPixelated(BLOCK_SIZES[0]);
+  renderAttempts();
+  renderHintName();
+
+  state.active = true;
+  setControlsEnabled(true);
+  guessInput.focus();
+}
+
+/* ============================================================
+   PROCESSAMENTO DO PALPITE
+   ============================================================ */
+function submitGuess() {
+  if (!state.active || !state.answer) return;
+
+  const raw = guessInput.value.trim();
+  if (!raw) { setFeedback('Digite um nome!', '#3b4cca'); return; }
+
+  const norm = normalize(raw);
+
+  // Valida se é um Pokémon existente (evita gastar tentativa com typo)
+  const found = state.all.find(p => p.norm === norm);
+  if (!found) {
+    setFeedback('❌ Pokémon não encontrado. Confira a grafia!', '#cc0000');
+    guessInput.select();
+    return;
+  }
+
+  // Já tentou esse?
+  if (state.wrong.some(w => normalize(w) === norm)) {
+    setFeedback('⚠️ Você já tentou esse Pokémon!', '#3b4cca');
+    guessInput.select();
+    return;
+  }
+
+  // ACERTOU
+  if (norm === state.answer.norm) {
+    state.score++;
+    state.streak++;
+    scoreCorrectEl.textContent = state.score;
+    scoreStreakEl.textContent  = state.streak;
+
+    revealAnswer(true);
+    return;
+  }
+
+  // ERROU
+  state.streak = 0;
+  scoreStreakEl.textContent = 0;
+
+  state.wrong.push(found.display);
+  renderWrongList();
+  renderAttempts();
+  renderHintName();
+
+  guessInput.value = '';
+  hideSuggestions();
+
+  const idx = state.wrong.length;
+
+  if (idx >= MAX_ATTEMPTS) {
+    revealAnswer(false);
+    return;
+  }
+
+  drawPixelated(BLOCK_SIZES[idx]);
+  setFeedback(`❌ Errou! Restam ${MAX_ATTEMPTS - idx} tentativa(s).`, '#cc0000');
+  guessInput.focus();
+}
+
+/* ============================================================
+   REVELAÇÃO / FIM DE RODADA
+   ============================================================ */
+function revealAnswer(win) {
+  state.active   = false;
+  state.revealed = true;
+
+  // Imagem nítida
+  drawPixelated(1);
+
+  setControlsEnabled(false);
+  hideSuggestions();
+
+  hintNameEl.textContent = state.answer.display;
+
+  if (win) {
+    setFeedback(`✅ Isso aí! É ${state.answer.display.toUpperCase()}!`, '#2e7d32');
+  } else {
+    setFeedback(`😢 Era ${state.answer.display.toUpperCase()}!`, '#cc0000');
+  }
+
+  nextBtn.classList.remove('hidden');
+  nextBtn.focus();
+}
+
+/* ============================================================
+   AUTOCOMPLETE
+   ============================================================ */
+function hideSuggestions() {
+  suggestions.classList.remove('open');
+  suggestions.innerHTML = '';
+  state.sugIndex = -1;
+  state.sugItems = [];
+}
+
+function showSuggestions(query) {
+  const q = normalize(query);
+  if (!q || q.length < 1) { hideSuggestions(); return; }
+
+  const alreadyTried = new Set(state.wrong.map(w => normalize(w)));
+
+  const matches = state.all
+    .filter(p => p.norm.startsWith(q) && !alreadyTried.has(p.norm))
+    .slice(0, 8);
+
+  if (matches.length === 0) { hideSuggestions(); return; }
+
+  state.sugItems = matches;
+  state.sugIndex = -1;
+  suggestions.innerHTML = '';
+
+  matches.forEach((p, i) => {
+    const li = document.createElement('li');
+    li.textContent = `#${String(p.id).padStart(4, '0')}  ${p.display}`;
+    li.dataset.index = i;
+
+    // mousedown evita que o input perca o foco antes do clique
+    li.addEventListener('mousedown', e => {
+      e.preventDefault();
+      guessInput.value = p.display;
+      hideSuggestions();
+      submitGuess();
+    });
+
+    suggestions.appendChild(li);
+  });
+
+  suggestions.classList.add('open');
+}
+
+function highlightSuggestion() {
+  const items = suggestions.querySelectorAll('li');
+  items.forEach((li, i) => li.classList.toggle('active', i === state.sugIndex));
+
+  if (state.sugIndex >= 0 && items[state.sugIndex]) {
+    items[state.sugIndex].scrollIntoView({ block: 'nearest' });
+    guessInput.value = state.sugItems[state.sugIndex].display;
+  }
+}
+
+/* ============================================================
+   EVENTOS
+   ============================================================ */
+guessBtn.addEventListener('click', submitGuess);
+giveUpBtn.addEventListener('click', () => { if (state.active) revealAnswer(false); });
+nextBtn.addEventListener('click', startRound);
+
+guessInput.addEventListener('input', () => {
+  showSuggestions(guessInput.value);
+});
+
+guessInput.addEventListener('keydown', e => {
+  const open = suggestions.classList.contains('open');
+
+  if (e.key === 'ArrowDown' && open) {
+    e.preventDefault();
+    state.sugIndex = Math.min(state.sugIndex + 1, state.sugItems.length - 1);
+    highlightSuggestion();
+    return;
+  }
+
+  if (e.key === 'ArrowUp' && open) {
+    e.preventDefault();
+    state.sugIndex = Math.max(state.sugIndex - 1, -1);
+    if (state.sugIndex === -1) guessInput.value = '';
+    highlightSuggestion();
+    return;
+  }
+
+  if (e.key === 'Escape') { hideSuggestions(); return; }
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    hideSuggestions();
+    submitGuess();
+  }
+});
+
+guessInput.addEventListener('blur', () => {
+  setTimeout(hideSuggestions, 120);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !nextBtn.classList.contains('hidden')) {
+    startRound();
+  }
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(async function init() {
+  await loadPokedex();
+  await startRound();
+})();
+</script>
+</body>
+</html>
